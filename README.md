@@ -1,0 +1,2 @@
+# TelegramStarDrop
+Всё это шутка
