@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram StarDrop Simulator</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.1);
+            --star-gold: #facc15;
+            --tg-blue: #24a1de;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top, #1e293b, #0f172a);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Шапка с балансом */
+        .header {
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+            margin-top: 20px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .balance-stars {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--star-gold);
+        }
+
+        /* Кнопка "Купить" */
+        .buy-btn {
+            background: var(--tg-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .buy-btn:active { transform: scale(0.95); }
+
+        /* Рулетка */
+        .roulette-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 150px;
+            margin: 40px 0;
+            background: var(--glass);
+            border-top: 2px solid var(--tg-blue);
+            border-bottom: 2px solid var(--tg-blue);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        .pointer {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: #ff4757;
+            z-index: 10;
+            box-shadow: 0 0 15px #ff4757;
+        }
+
+        .tape {
+            display: flex;
+            position: absolute;
+            left: 0;
+            transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
+            will-change: transform;
+        }
+
+        .item {
+            min-width: 120px;
+            height: 120px;
+            margin: 0 5px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .item img { width: 60px; height: 60px; margin-bottom: 5px; }
+        .item.legendary { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+        .item.rare { border-color: #a855f7; background: rgba(168, 85, 247, 0.1); }
+
+        /* Управление */
+        .controls { margin-bottom: 30px; }
+        .spin-btn {
+            background: linear-gradient(45deg, #f59e0b, #ef4444);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Инвентарь */
+        .inventory {
+            width: 90%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="balance-stars">⭐ <span id="star-balance">500</span></div>
+        <button class="buy-btn" onclick="fakeBuy()">+ Купить Звезды</button>
+    </div>
+
+    <div class="roulette-container">
+        <div class="pointer"></div>
+        <div id="tape" class="tape"></div>
+    </div>
+
+    <div class="controls">
+        <button id="spin-button" class="spin-btn" onclick="startSpin()">КРУТИТЬ (100 ⭐)</button>
+    </div>
+
+    <h3>Твой Инвентарь</h3>
+    <div id="inventory" class="inventory"></div>
+
+    <script>
+        let stars = 500;
+        const spinCost = 100;
+        const tape = document.getElementById('tape');
+        const inventoryEl = document.getElementById('inventory');
+        
+        // Список NFT
+        const nftData = [
+            { name: "Common Dog", img: "🐶", price: 50, rarity: 'common', chance: 70 },
+            { name: "Rare TON", img: "💎", price: 250, rarity: 'rare', chance: 25 },
+            { name: "LEGEND DUROV", img: "🧊", price: 1000, rarity: 'legendary', chance: 5 }
+        ];
+
+        // Имитация покупки
+        function fakeBuy() {
+            alert("Имитация оплаты через Telegram... ✅");
+            stars += 1000;
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('star-balance').innerText = stars;
+        }
+
+        // Генерация предметов для ленты
+        function generateTape() {
+            tape.innerHTML = '';
+            for (let i = 0; i < 50; i++) {
+                const randomNft = nftData[Math.floor(Math.random() * nftData.length)];
+                const div = document.createElement('div');
+                div.className = `item ${randomNft.rarity}`;
+                div.innerHTML = `<span>${randomNft.img}</span><small>${randomNft.name}</small>`;
+                tape.appendChild(div);
+            }
+        }
+
+        function startSpin() {
+            if (stars < spinCost) return alert("Недостаточно звезд!");
+            
+            stars -= spinCost;
+            updateUI();
+            document.getElementById('spin-button').disabled = true;
+
+            generateTape();
+            
+            const itemWidth = 130; // 120px + margin
+            const targetIndex = 45; // На каком предмете остановимся
+            const offset = (targetIndex * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2);
+            
+            tape.style.transition = 'none';
+            tape.style.transform = 'translateX(0)';
+            
+            setTimeout(() => {
+                tape.style.transition = 'transform 5s cubic-bezier(0.15, 0, 0.15, 1)';
+                tape.style.transform = `translateX(-${offset}px)`;
+            }, 50);
+
+            // Финал прокрутки
+            setTimeout(() => {
+                const wonNft = nftData[Math.floor(Math.random() * nftData.length)]; // Здесь можно сделать честный шанс
+                addToInventory(wonNft);
+                document.getElementById('spin-button').disabled = false;
+            }, 5500);
+        }
+
+        function addToInventory(nft) {
+            const div = document.createElement('div');
+            div.className = `item ${nft.rarity}`;
+            div.style.minWidth = "100px";
+            div.innerHTML = `
+                <span>${nft.img}</span>
+                <button onclick="sellNft(this, ${nft.price})" style="font-size:10px; margin-top:5px;">Продать за ${nft.price} ⭐</button>
+            `;
+            inventoryEl.appendChild(div);
+        }
+
+        function sellNft(btn, price) {
+            stars += price;
+            updateUI();
+            btn.parentElement.remove();
+        }
+
+        generateTape(); // Сгенерировать ленту при загрузке
+    </script>
+</body>
+</html>
